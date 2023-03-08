@@ -2,9 +2,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../model/userModel.js";
 import { config } from "../config/index.js";
+import asyncHandler from "express-async-handler";
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
+
+  console.log(name, email, password);
 
   // check if anything is missing
   // 400 BAD REQUEST
@@ -19,6 +22,8 @@ export const register = asyncHandler(async (req, res) => {
   // 400 BAD REQUEST
   // const user = User.findOne({ email: email });
   const user = await User.findOne({ email }).lean();
+
+  console.log("user", user);
 
   if (user) {
     res.status(400);
@@ -37,6 +42,8 @@ export const register = asyncHandler(async (req, res) => {
     password: hash,
   });
 
+  console.log(newUser);
+
   if (!newUser) {
     res.status(400);
     throw new Error("User was not created successfully");
@@ -44,28 +51,14 @@ export const register = asyncHandler(async (req, res) => {
 
   // send the user and a token back
   res.status(201).json({
-    _id: newUser.id,
-    name: newUser.name,
-    email: newUser.email,
+    user: {
+      _id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+    },
     token: createToken(newUser.id),
   });
-  // } catch (err) {
-  //   res.json({
-  //     message: err.message ? err.message : "Something went wrong",
-  //     stack: err.stack ? err.stack : null,
-  //   });
-  // }
 });
-
-const asyncHandler = (fn) => async (req, res, next) => {
-  // Promise.resolve(fn(req, res, next)).catch(next);
-
-  try {
-    fn(req, res, next);
-  } catch {
-    next(err);
-  }
-};
 
 export const login = async (req, res) => {
   // email password
